@@ -61,29 +61,29 @@ const TESTIMONIALS = [
 ];
 
 /* ── Custom Cursor ── */
-function CustomCursor() {
-  const dot  = useRef(null);
-  const ring = useRef(null);
-  useEffect(() => {
-    let rx = 0, ry = 0;
-    const onMove = (e) => {
-      const x = e.clientX, y = e.clientY;
-      if (dot.current)  { dot.current.style.left = x + "px";  dot.current.style.top = y + "px"; }
-      if (ring.current) {
-        rx += (x - rx) * 0.12; ry += (y - ry) * 0.12;
-        ring.current.style.left = rx + "px"; ring.current.style.top = ry + "px";
-      }
-    };
-    window.addEventListener("mousemove", onMove);
-    return () => window.removeEventListener("mousemove", onMove);
-  }, []);
-  return (
-    <>
-      <div ref={dot}  className="cursor-dot" />
-      <div ref={ring} className="cursor-ring" />
-    </>
-  );
-}
+// function CustomCursor() {
+//   const dot  = useRef(null);
+//   const ring = useRef(null);
+//   useEffect(() => {
+//     let rx = 0, ry = 0;
+//     const onMove = (e) => {
+//       const x = e.clientX, y = e.clientY;
+//       if (dot.current)  { dot.current.style.left = x + "px";  dot.current.style.top = y + "px"; }
+//       if (ring.current) {
+//         rx += (x - rx) * 0.12; ry += (y - ry) * 0.12;
+//         ring.current.style.left = rx + "px"; ring.current.style.top = ry + "px";
+//       }
+//     };
+//     window.addEventListener("mousemove", onMove);
+//     return () => window.removeEventListener("mousemove", onMove);
+//   }, []);
+//   return (
+//     <>
+//       <div ref={dot}  className="cursor-dot" />
+//       <div ref={ring} className="cursor-ring" />
+//     </>
+//   );
+// }
 
 /* ── Grid Background ── */
 function GridBackground() {
@@ -263,7 +263,7 @@ export default function Home() {
 
   return (
     <div style={{ position: "relative", minHeight: "100vh", background: "#050607" }}>
-      <CustomCursor />
+      {/* <CustomCursor /> */}
       <GridBackground />
       <Scanline />
       <AmbientOrbs />

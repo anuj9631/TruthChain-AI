@@ -1,7 +1,9 @@
-const API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
+const API_KEY = import.meta.env.VITE_GROQ_API_KEY;
+const API_URL = "https://api.groq.com/openai/v1/chat/completions";
+const MODEL   = "llama-3.3-70b-versatile";
 
 export async function analyzeClaim(claim) {
-  if (!API_KEY) throw new Error("Missing VITE_ANTHROPIC_API_KEY in .env");
+  if (!API_KEY) throw new Error("Missing VITE_GROQ_API_KEY in .env");
 
   const prompt = `You are TruthChain AI, an expert misinformation early-warning system.
 
@@ -28,34 +30,42 @@ Respond ONLY with a single valid JSON object. No markdown, no extra text, no bac
   "analysis": "<3-4 sentence deeper analysis: psychological and social patterns, why this spreads, what would slow it down>"
 }`;
 
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+  const res = await fetch(API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "x-api-key": API_KEY,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true",
+      "Authorization": `Bearer ${API_KEY}`,
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
+      model: MODEL,
       max_tokens: 1000,
-      messages: [{ role: "user", content: prompt }],
+      temperature: 0.4,
+      messages: [
+        {
+          role: "system",
+          content: "You are TruthChain AI. You always respond with valid JSON only. No markdown, no explanation, no backticks. Just raw JSON.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
     }),
   });
 
   if (!res.ok) {
     const err = await res.json();
-    throw new Error(err?.error?.message || "API request failed");
+    throw new Error(err?.error?.message || "Groq API request failed");
   }
 
   const data = await res.json();
-  const text = data.content.map((b) => b.text || "").join("");
+  const text = data.choices?.[0]?.message?.content || "";
 
   try {
     return JSON.parse(text);
   } catch {
     const match = text.match(/\{[\s\S]*\}/);
     if (match) return JSON.parse(match[0]);
-    throw new Error("Could not parse Claude response as JSON");
+    throw new Error("Could not parse response as JSON");
   }
 }
