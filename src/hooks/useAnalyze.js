@@ -21,8 +21,8 @@ export function useAnalyze() {
       setResult(data);
 
       /* Step 2 — Save to Supabase */
-      const saved = await saveClaim(claim.trim(), data);
-      if (saved) setSaved(true);
+     const savedResult = await saveClaim(claim.trim(), data);
+if (savedResult) setSaved(true);
 
     } catch (e) {
       setError(e.message || "Something went wrong. Check your API key.");

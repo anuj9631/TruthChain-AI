@@ -1,33 +1,17 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip,
-  ResponsiveContainer, LineChart, Line,
-  CartesianGrid, Legend,
+  LineChart, Line, BarChart, Bar,
+  XAxis, YAxis, Tooltip,
+  ResponsiveContainer, CartesianGrid,
 } from "recharts";
-import Navbar from "../components/layout/Navbar";
-import Footer from "../components/layout/Footer";
+import Navbar        from "../components/layout/Navbar";
+import Footer        from "../components/layout/Footer";
 import ParticleField from "../components/three/ParticleField";
-import StatsBar from "../components/ui/StatsBar";
-import ClaimCard from "../components/ui/ClaimCard";
+import StatsBar      from "../components/ui/StatsBar";
+import { useClaims, useDashboardStats } from "../hooks/useClaims";
 
-/* ── Mock Data ── */
-const MOCK_CLAIMS = [
-  { id: 1,  claim: "5G towers cause long-term memory loss in urban populations",       risk_score: 88, risk_level: "HIGH",     tags: ["fear-based", "no-citation", "viral"],           time: "2m ago" },
-  { id: 2,  claim: "COVID-19 vaccines contain nano-microchips activated via Bluetooth", risk_score: 94, risk_level: "HIGH",     tags: ["conspiracy", "identity-threat", "fear-based"],  time: "5m ago" },
-  { id: 3,  claim: "New study links tap water fluoride to 15-point IQ reduction",       risk_score: 71, risk_level: "HIGH",     tags: ["fake-study", "fear-based", "health"],           time: "9m ago" },
-  { id: 4,  claim: "Election machines in 4 swing states remotely hacked",              risk_score: 85, risk_level: "HIGH",     tags: ["election", "no-evidence", "identity-threat"],   time: "14m ago" },
-  { id: 5,  claim: "MIT study proves global warming stopped in 2015",                  risk_score: 76, risk_level: "HIGH",     tags: ["climate-denial", "fake-study", "viral"],        time: "18m ago" },
-  { id: 6,  claim: "Chemtrails are being used to secretly alter weather patterns",     risk_score: 62, risk_level: "MODERATE", tags: ["conspiracy", "anonymous-source"],               time: "22m ago" },
-  { id: 7,  claim: "Chip in 2000 rupee notes can track your location via GPS",         risk_score: 68, risk_level: "MODERATE", tags: ["economic-fear", "no-citation", "viral"],        time: "31m ago" },
-  { id: 8,  claim: "Eating turmeric daily cures all forms of cancer",                  risk_score: 55, risk_level: "MODERATE", tags: ["health-misinformation", "no-citation"],         time: "38m ago" },
-  { id: 9,  claim: "WHO secretly planning global mandatory vaccine program in 2026",   risk_score: 79, risk_level: "HIGH",     tags: ["fear-based", "conspiracy", "identity-threat"],  time: "45m ago" },
-  { id: 10, claim: "New research shows coffee consumption linked to memory loss",       risk_score: 34, risk_level: "LOW",      tags: ["health", "needs-verification"],                 time: "52m ago" },
-  { id: 11, claim: "Government plans to replace paper money with digital only currency", risk_score: 48, risk_level: "MODERATE", tags: ["economic-fear", "partial-truth"],             time: "1h ago" },
-  { id: 12, claim: "Drinking lemon water every morning reverses diabetes completely",   risk_score: 41, risk_level: "MODERATE", tags: ["health-misinformation", "no-citation"],         time: "1h ago" },
-  { id: 13, claim: "Scientists confirm moon landing was staged by NASA in 1969",        risk_score: 22, risk_level: "LOW",      tags: ["debunked", "conspiracy"],                       time: "2h ago" },
-  { id: 14, claim: "New AI model can predict human death within 24 hours",             risk_score: 58, risk_level: "MODERATE", tags: ["fear-based", "exaggerated"],                   time: "2h ago" },
-  { id: 15, claim: "Russia develops invisible military aircraft undetectable by radar", risk_score: 29, risk_level: "LOW",      tags: ["unverified", "military"],                       time: "3h ago" },
-];
+const FILTERS = ["ALL", "HIGH", "MODERATE", "LOW"];
 
 const TREND_DATA = [
   { time: "00:00", high: 12, moderate: 8,  low: 5  },
@@ -41,22 +25,34 @@ const TREND_DATA = [
   { time: "Now",   high: 62, moderate: 40, low: 20 },
 ];
 
-const CATEGORY_DATA = [
-  { category: "Health",   count: 38, fill: "#ff6b6b" },
-  { category: "Politics", count: 29, fill: "#ffb74d" },
-  { category: "Science",  count: 18, fill: "#5ce4b8" },
-  { category: "Economy",  count: 24, fill: "#c8f060" },
-  { category: "Military", count: 11, fill: "#9b8afb" },
-];
+/* ── Helpers ── */
+function getRiskColor(level) {
+  if (level === "HIGH")     return "#ff6b6b";
+  if (level === "MODERATE") return "#ffb74d";
+  return "#5ce4b8";
+}
 
-const FILTERS = ["ALL", "HIGH", "MODERATE", "LOW"];
+function getRiskBg(level) {
+  if (level === "HIGH")     return "rgba(255,107,107,0.08)";
+  if (level === "MODERATE") return "rgba(255,183,77,0.08)";
+  return "rgba(92,228,184,0.08)";
+}
 
-/* ── Custom Tooltip ── */
+function timeAgo(dateStr) {
+  const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+  if (diff < 60)   return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+/* ── Custom tooltip ── */
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null;
   return (
     <div style={{
-      background: "#0c0e11", border: "0.5px solid rgba(255,255,255,0.1)",
+      background: "#0c0e11",
+      border: "0.5px solid rgba(255,255,255,0.1)",
       borderRadius: 8, padding: "10px 14px",
     }}>
       <div style={{
@@ -67,9 +63,7 @@ function CustomTooltip({ active, payload, label }) {
         <div key={i} style={{
           fontFamily: "'IBM Plex Mono', monospace",
           fontSize: 11, color: p.color, marginBottom: 2,
-        }}>
-          {p.name}: {p.value}
-        </div>
+        }}>{p.name}: {p.value}</div>
       ))}
     </div>
   );
@@ -82,8 +76,7 @@ function Panel({ title, accent = "#c8f060", children, action }) {
       background: "rgba(10,12,15,0.8)",
       border: "0.5px solid rgba(255,255,255,0.07)",
       borderRadius: 14, overflow: "hidden",
-      backdropFilter: "blur(16px)",
-      marginBottom: 16,
+      backdropFilter: "blur(16px)", marginBottom: 16,
     }}>
       <div style={{
         padding: "12px 20px",
@@ -106,77 +99,189 @@ function Panel({ title, accent = "#c8f060", children, action }) {
   );
 }
 
-/* ── Live indicator ── */
-function LiveBadge({ count }) {
+/* ── Score ring ── */
+function ScoreRing({ score, level }) {
+  const color = getRiskColor(level);
+  const r     = 18;
+  const circ  = 2 * Math.PI * r;
+  const fill  = (score / 100) * circ;
+  return (
+    <div style={{ position: "relative", width: 48, height: 48, flexShrink: 0 }}>
+      <svg width="48" height="48" viewBox="0 0 48 48"
+        style={{ transform: "rotate(-90deg)" }}>
+        <circle cx="24" cy="24" r={r} fill="none" stroke="#1a1d24" strokeWidth="4" />
+        <circle cx="24" cy="24" r={r} fill="none" stroke={color}
+          strokeWidth="4" strokeLinecap="round"
+          strokeDasharray={`${fill} ${circ}`} />
+      </svg>
+      <div style={{
+        position: "absolute", top: "50%", left: "50%",
+        transform: "translate(-50%,-50%)",
+        fontFamily: "'IBM Plex Mono', monospace",
+        fontSize: 11, fontWeight: 500, color,
+      }}>{score}</div>
+    </div>
+  );
+}
+
+/* ── Claim row ── */
+function ClaimRow({ claim, index }) {
+  const [hov, setHov] = useState(false);
+  const navigate      = useNavigate();
+  const color         = getRiskColor(claim.risk_level);
+
+  return (
+    <div
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      onClick={() => navigate("/analyze")}
+      style={{
+        display: "flex", alignItems: "center", gap: 16,
+        padding: "14px 18px",
+        background: hov ? getRiskBg(claim.risk_level) : "rgba(10,12,15,0.3)",
+        border: `0.5px solid ${hov ? color + "33" : "rgba(255,255,255,0.04)"}`,
+        borderRadius: 10, marginBottom: 6,
+        cursor: "pointer",
+        transition: "all 0.22s cubic-bezier(0.16,1,0.3,1)",
+        transform: hov ? "translateX(4px)" : "translateX(0)",
+      }}
+    >
+      {/* Index */}
+      <div style={{
+        fontFamily: "'IBM Plex Mono', monospace",
+        fontSize: 10, color: "#2a2e36", minWidth: 22,
+      }}>{String(index + 1).padStart(2, "0")}</div>
+
+      {/* Dot */}
+      <div style={{
+        width: 6, height: 6, borderRadius: "50%",
+        background: color, flexShrink: 0,
+        boxShadow: `0 0 6px ${color}`,
+        animation: claim.risk_level === "HIGH"
+          ? "dotPulse 1.5s ease-in-out infinite" : "none",
+      }} />
+
+      {/* Claim text + tags */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{
+          fontSize: 13, fontWeight: 500, marginBottom: 5,
+          color: hov ? "#eceae2" : "#8a929e",
+          whiteSpace: "nowrap", overflow: "hidden",
+          textOverflow: "ellipsis", transition: "color 0.2s",
+        }}>{claim.claim}</div>
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+          {(claim.tags || []).slice(0, 3).map((tag, i) => (
+            <span key={i} style={{
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 9, letterSpacing: "0.06em",
+              padding: "2px 7px", borderRadius: 20,
+              background: `${color}11`, color,
+              border: `0.5px solid ${color}22`,
+            }}>{tag}</span>
+          ))}
+        </div>
+      </div>
+
+      {/* Score */}
+      <ScoreRing score={claim.risk_score} level={claim.risk_level} />
+
+      {/* Risk badge */}
+      <div style={{
+        fontFamily: "'IBM Plex Mono', monospace",
+        fontSize: 9, letterSpacing: "0.1em",
+        padding: "4px 10px", borderRadius: 20,
+        background: getRiskBg(claim.risk_level),
+        color, border: `0.5px solid ${color}33`,
+        minWidth: 80, textAlign: "center", flexShrink: 0,
+      }}>{claim.risk_level}</div>
+
+      {/* Time */}
+      <div style={{
+        fontFamily: "'IBM Plex Mono', monospace",
+        fontSize: 10, color: "#2a2e36",
+        minWidth: 56, textAlign: "right", flexShrink: 0,
+      }}>{timeAgo(claim.created_at)}</div>
+    </div>
+  );
+}
+
+/* ── Empty feed ── */
+function EmptyFeed() {
+  const navigate = useNavigate();
   return (
     <div style={{
-      display: "flex", alignItems: "center", gap: 6,
-      fontFamily: "'IBM Plex Mono', monospace",
-      fontSize: 9, letterSpacing: "0.1em", color: "#ff6b6b",
+      textAlign: "center", padding: "60px 20px",
+      display: "flex", flexDirection: "column",
+      alignItems: "center", gap: 16,
     }}>
-      <span style={{
-        width: 5, height: 5, borderRadius: "50%",
-        background: "#ff6b6b",
-        animation: "dotPulse 1.5s ease-in-out infinite",
-        display: "inline-block",
-      }} />
-      LIVE · {count} CLAIMS
+      <div style={{
+        width: 56, height: 56, borderRadius: "50%",
+        background: "rgba(200,240,96,0.05)",
+        border: "0.5px solid rgba(200,240,96,0.1)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 22, color: "#c8f060", opacity: 0.4,
+      }}>◈</div>
+      <div style={{
+        fontFamily: "'Syne', sans-serif", fontWeight: 600,
+        fontSize: 16, color: "#2a2e36",
+      }}>No claims analyzed yet</div>
+      <div style={{
+        fontFamily: "'IBM Plex Mono', monospace",
+        fontSize: 11, color: "#252930", marginBottom: 8,
+      }}>Analyze your first claim to see it here</div>
+      <button
+        onClick={() => navigate("/analyze")}
+        style={{
+          background: "linear-gradient(135deg, #c8f060, #a8e040)",
+          color: "#050607", border: "none", borderRadius: 6,
+          padding: "9px 22px", fontFamily: "'IBM Plex Mono', monospace",
+          fontSize: 11, letterSpacing: "0.06em", cursor: "pointer",
+          fontWeight: 500,
+        }}
+      >ANALYZE FIRST CLAIM →</button>
+    </div>
+  );
+}
+
+/* ── Loading rows skeleton ── */
+function FeedSkeleton() {
+  return (
+    <div>
+      <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
+      {[1,2,3,4,5].map(i => (
+        <div key={i} style={{
+          height: 72, borderRadius: 10, marginBottom: 6,
+          background: "linear-gradient(90deg, #0f1216 25%, #161a20 50%, #0f1216 75%)",
+          backgroundSize: "200% 100%",
+          animation: "shimmer 1.4s infinite",
+          animationDelay: `${i * 0.1}s`,
+        }} />
+      ))}
     </div>
   );
 }
 
 /* ── MAIN DASHBOARD ── */
 export default function Dashboard() {
-  const [filter,   setFilter]   = useState("ALL");
-  const [claims,   setClaims]   = useState(MOCK_CLAIMS);
-  const [tick,     setTick]     = useState(0);
-  const [newAlert, setNewAlert] = useState(null);
+  const [filter, setFilter] = useState("ALL");
+  const { claims, loading: claimsLoading } = useClaims({ filter });
+  const { stats } = useDashboardStats();
 
-  /* Simulate new claims coming in every 30s */
-  const NEW_CLAIMS = [
-    { id: 100, claim: "Breaking: Unknown virus spreading in Southeast Asia",           risk_score: 91, risk_level: "HIGH",     tags: ["health-fear", "breaking", "viral"],             time: "just now" },
-    { id: 101, claim: "Government secretly testing mind control via smartphones",      risk_score: 83, risk_level: "HIGH",     tags: ["conspiracy", "fear-based", "identity-threat"],  time: "just now" },
-    { id: 102, claim: "New superfood discovered that cures all autoimmune diseases",   risk_score: 47, risk_level: "MODERATE", tags: ["health", "exaggerated", "no-citation"],         time: "just now" },
-  ];
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const next = NEW_CLAIMS[tick % NEW_CLAIMS.length];
-      setNewAlert(next);
-      setClaims(prev => [{ ...next, time: "just now" }, ...prev.slice(0, 14)]);
-      setTick(t => t + 1);
-      setTimeout(() => setNewAlert(null), 4000);
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [tick]);
-
-  const filtered = filter === "ALL"
-    ? claims
-    : claims.filter(c => c.risk_level === filter);
-
-  const highCount = claims.filter(c => c.risk_level === "HIGH").length;
-  const modCount  = claims.filter(c => c.risk_level === "MODERATE").length;
-  const lowCount  = claims.filter(c => c.risk_level === "LOW").length;
-
-  const distData = [
-    { name: "High",     value: highCount, fill: "#ff6b6b" },
-    { name: "Moderate", value: modCount,  fill: "#ffb74d" },
-    { name: "Low",      value: lowCount,  fill: "#5ce4b8" },
-  ];
+  const distData = stats ? [
+    { name: "High",     value: stats.high,     fill: "#ff6b6b" },
+    { name: "Moderate", value: stats.moderate,  fill: "#ffb74d" },
+    { name: "Low",      value: stats.low,       fill: "#5ce4b8" },
+  ] : [];
 
   return (
     <div style={{ position: "relative", minHeight: "100vh", background: "#050607" }}>
       <style>{`
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(16px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
         @keyframes dotPulse {
           0%, 100% { transform: scale(1); opacity: 1; }
-          50%       { transform: scale(1.6); opacity: 0.5; }
+          50% { transform: scale(1.6); opacity: 0.5; }
         }
-        @keyframes slideIn {
-          from { opacity: 0; transform: translateY(-20px); }
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(16px); }
           to   { opacity: 1; transform: translateY(0); }
         }
       `}</style>
@@ -194,67 +299,56 @@ export default function Dashboard() {
         <div style={{ marginBottom: 36 }}>
           <div style={{
             fontFamily: "'IBM Plex Mono', monospace", fontSize: 10,
-            color: "#c8f060", letterSpacing: "0.2em", marginBottom: 10, opacity: 0.8,
+            color: "#c8f060", letterSpacing: "0.2em",
+            marginBottom: 10, opacity: 0.8,
           }}>TRUTHCHAIN AI · DASHBOARD</div>
-          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <div style={{
+            display: "flex", alignItems: "flex-end",
+            justifyContent: "space-between", flexWrap: "wrap", gap: 12,
+          }}>
             <h1 style={{
               fontFamily: "'Syne', sans-serif", fontWeight: 800,
               fontSize: "clamp(28px, 4vw, 48px)", letterSpacing: "-1.5px",
               background: "linear-gradient(135deg, #eceae2 0%, rgba(236,234,226,0.5) 100%)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             }}>Live Claim Monitor</h1>
-            <LiveBadge count={claims.length} />
+
+            {/* Live badge */}
+            <div style={{
+              display: "flex", alignItems: "center", gap: 6,
+              fontFamily: "'IBM Plex Mono', monospace",
+              fontSize: 9, color: "#ff6b6b", letterSpacing: "0.1em",
+            }}>
+              <span style={{
+                width: 5, height: 5, borderRadius: "50%",
+                background: "#ff6b6b", display: "inline-block",
+                animation: "dotPulse 1.5s ease-in-out infinite",
+              }} />
+              LIVE · {claims.length} CLAIMS IN DB
+            </div>
           </div>
         </div>
-
-        {/* New alert toast */}
-        {newAlert && (
-          <div style={{
-            background: "rgba(255,107,107,0.08)",
-            border: "0.5px solid rgba(255,107,107,0.3)",
-            borderRadius: 10, padding: "12px 18px",
-            marginBottom: 20, display: "flex",
-            alignItems: "center", gap: 12,
-            animation: "slideIn 0.4s cubic-bezier(0.16,1,0.3,1)",
-          }}>
-            <span style={{
-              width: 6, height: 6, borderRadius: "50%",
-              background: "#ff6b6b", flexShrink: 0,
-              animation: "dotPulse 1.5s ease-in-out infinite",
-              display: "inline-block",
-            }} />
-            <span style={{
-              fontFamily: "'IBM Plex Mono', monospace",
-              fontSize: 10, color: "#ff6b6b", letterSpacing: "0.06em",
-            }}>NEW HIGH RISK CLAIM DETECTED →</span>
-            <span style={{ fontSize: 13, color: "#8a4444" }}>{newAlert.claim}</span>
-          </div>
-        )}
 
         {/* Stats */}
         <StatsBar />
 
-        {/* Charts row */}
+        {/* Charts */}
         <div style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
+          display: "grid", gridTemplateColumns: "1fr 1fr",
           gap: 16, marginBottom: 4,
         }}>
-          {/* Trend chart */}
+          {/* Trend */}
           <Panel title="Claim Volume — Last 24 Hours" accent="#5ce4b8">
             <div style={{ height: 200 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={TREND_DATA}>
                   <CartesianGrid stroke="rgba(255,255,255,0.03)" />
-                  <XAxis
-                    dataKey="time"
+                  <XAxis dataKey="time"
                     tick={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fill: "#404752" }}
-                    axisLine={false} tickLine={false}
-                  />
+                    axisLine={false} tickLine={false} />
                   <YAxis
                     tick={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fill: "#404752" }}
-                    axisLine={false} tickLine={false}
-                  />
+                    axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
                   <Line type="monotone" dataKey="high"     stroke="#ff6b6b" strokeWidth={2} dot={false} name="High" />
                   <Line type="monotone" dataKey="moderate" stroke="#ffb74d" strokeWidth={2} dot={false} name="Moderate" />
@@ -262,7 +356,6 @@ export default function Dashboard() {
                 </LineChart>
               </ResponsiveContainer>
             </div>
-            {/* Legend */}
             <div style={{ display: "flex", gap: 16, marginTop: 12 }}>
               {[
                 { label: "High",     color: "#ff6b6b" },
@@ -280,23 +373,23 @@ export default function Dashboard() {
             </div>
           </Panel>
 
-          {/* Category chart */}
-          <Panel title="Claims by Category" accent="#ffb74d">
+          {/* Distribution */}
+          <Panel title="Risk Distribution" accent="#ffb74d">
             <div style={{ height: 200 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={CATEGORY_DATA} barSize={28}>
-                  <XAxis
-                    dataKey="category"
+                <BarChart data={distData} barSize={40}>
+                  <XAxis dataKey="name"
                     tick={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fill: "#404752" }}
-                    axisLine={false} tickLine={false}
-                  />
+                    axisLine={false} tickLine={false} />
                   <YAxis
                     tick={{ fontFamily: "'IBM Plex Mono', monospace", fontSize: 9, fill: "#404752" }}
-                    axisLine={false} tickLine={false}
-                  />
+                    axisLine={false} tickLine={false} />
                   <Tooltip content={<CustomTooltip />} />
-                  <Bar dataKey="count" radius={[4, 4, 0, 0]} name="Claims">
-                    {CATEGORY_DATA.map((entry, i) => (
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]} name="Claims"
+                    fill="#c8f060"
+                    label={false}
+                  >
+                    {distData.map((entry, i) => (
                       <rect key={i} fill={entry.fill} />
                     ))}
                   </Bar>
@@ -304,7 +397,7 @@ export default function Dashboard() {
               </ResponsiveContainer>
             </div>
 
-            {/* Distribution pills */}
+            {/* Pills */}
             <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
               {distData.map(d => (
                 <div key={d.name} style={{
@@ -315,7 +408,7 @@ export default function Dashboard() {
                 }}>
                   <div style={{
                     fontFamily: "'Syne', sans-serif", fontWeight: 700,
-                    fontSize: 18, color: d.fill,
+                    fontSize: 20, color: d.fill,
                   }}>{d.value}</div>
                   <div style={{
                     fontFamily: "'IBM Plex Mono', monospace",
@@ -329,7 +422,7 @@ export default function Dashboard() {
 
         {/* Live Feed */}
         <Panel
-          title="Live Claim Feed"
+          title="Analyzed Claims Feed — Real Database"
           accent="#ff6b6b"
           action={
             <div style={{ display: "flex", gap: 6 }}>
@@ -338,26 +431,9 @@ export default function Dashboard() {
                   key={f}
                   onClick={() => setFilter(f)}
                   style={{
-                    background: filter === f
-                      ? f === "HIGH"     ? "rgba(255,107,107,0.15)"
-                      : f === "MODERATE" ? "rgba(255,183,77,0.15)"
-                      : f === "LOW"      ? "rgba(92,228,184,0.15)"
-                      :                   "rgba(200,240,96,0.15)"
-                      : "transparent",
-                    border: `0.5px solid ${
-                      filter === f
-                        ? f === "HIGH"     ? "rgba(255,107,107,0.4)"
-                        : f === "MODERATE" ? "rgba(255,183,77,0.4)"
-                        : f === "LOW"      ? "rgba(92,228,184,0.4)"
-                        :                   "rgba(200,240,96,0.4)"
-                        : "rgba(255,255,255,0.08)"
-                    }`,
-                    color: filter === f
-                      ? f === "HIGH"     ? "#ff6b6b"
-                      : f === "MODERATE" ? "#ffb74d"
-                      : f === "LOW"      ? "#5ce4b8"
-                      :                   "#c8f060"
-                      : "#404752",
+                    background: filter === f ? "rgba(200,240,96,0.1)" : "transparent",
+                    border: `0.5px solid ${filter === f ? "rgba(200,240,96,0.35)" : "rgba(255,255,255,0.07)"}`,
+                    color: filter === f ? "#c8f060" : "#404752",
                     borderRadius: 6, padding: "4px 10px",
                     fontFamily: "'IBM Plex Mono', monospace",
                     fontSize: 9, letterSpacing: "0.08em",
@@ -371,11 +447,11 @@ export default function Dashboard() {
           {/* Column headers */}
           <div style={{
             display: "flex", alignItems: "center", gap: 16,
-            padding: "0 20px 10px",
+            padding: "0 18px 10px",
             borderBottom: "0.5px solid rgba(255,255,255,0.04)",
             marginBottom: 8,
           }}>
-            <div style={{ minWidth: 24 }} />
+            <div style={{ minWidth: 22 }} />
             <div style={{ minWidth: 6 }} />
             <div style={{
               flex: 1, fontFamily: "'IBM Plex Mono', monospace",
@@ -391,21 +467,15 @@ export default function Dashboard() {
             }}>RISK</div>
             <div style={{
               fontFamily: "'IBM Plex Mono', monospace",
-              fontSize: 9, color: "#2a2e36", minWidth: 48, textAlign: "right",
+              fontSize: 9, color: "#2a2e36", minWidth: 56, textAlign: "right",
             }}>TIME</div>
           </div>
 
-          {filtered.length === 0 ? (
-            <div style={{
-              textAlign: "center", padding: "48px 0",
-              fontFamily: "'IBM Plex Mono', monospace",
-              fontSize: 12, color: "#2a2e36",
-            }}>No claims match this filter</div>
-          ) : (
-            filtered.map((claim, i) => (
-              <ClaimCard key={claim.id} claim={claim} index={i} />
-            ))
-          )}
+          {claimsLoading  && <FeedSkeleton />}
+          {!claimsLoading && claims.length === 0 && <EmptyFeed />}
+          {!claimsLoading && claims.map((claim, i) => (
+            <ClaimRow key={claim.id} claim={claim} index={i} />
+          ))}
         </Panel>
 
       </main>

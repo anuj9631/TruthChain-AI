@@ -1,13 +1,13 @@
 import { useRef } from "react";
-import Navbar from "../components/layout/Navbar";
-import Footer from "../components/layout/Footer";
+import Navbar      from "../components/layout/Navbar";
+import Footer      from "../components/layout/Footer";
 import ParticleField from "../components/three/ParticleField";
-import ClaimInput from "../components/ui/ClaimInput";
-import RiskGauge from "../components/ui/RiskGauge";
-import MetricBar from "../components/ui/MetricBar";
+import ClaimInput  from "../components/ui/ClaimInput";
+import RiskGauge   from "../components/ui/RiskGauge";
+import MetricBar   from "../components/ui/MetricBar";
 import { useAnalyze } from "../hooks/useAnalyze";
 
-/* ── Skeleton loader ── */
+/* ── Skeleton ── */
 function Skeleton({ h = 20, w = "100%", mb = 0 }) {
   return (
     <div style={{
@@ -38,28 +38,25 @@ function SpreadStage({ stage }) {
           fontFamily: "'Syne', sans-serif", fontWeight: 600,
           fontSize: 14, color: "#eceae2", marginBottom: 4,
         }}>{stage.platform}</div>
-        <div style={{
-          fontSize: 12, color: "#555d6a", lineHeight: 1.65,
-        }}>{stage.desc}</div>
+        <div style={{ fontSize: 12, color: "#555d6a", lineHeight: 1.65 }}>{stage.desc}</div>
       </div>
     </div>
   );
 }
 
-/* ── Tag pill ── */
+/* ── Tag ── */
 function Tag({ label }) {
   const colors = {
-    "fear-based":       { bg: "rgba(255,107,107,0.1)",  color: "#ff6b6b" },
-    "no-citation":      { bg: "rgba(255,183,77,0.1)",   color: "#ffb74d" },
-    "identity-threat":  { bg: "rgba(255,107,107,0.1)",  color: "#ff6b6b" },
-    "high-shareability":{ bg: "rgba(200,240,96,0.1)",   color: "#c8f060" },
-    "anonymous-source": { bg: "rgba(255,183,77,0.1)",   color: "#ffb74d" },
-    "us-vs-them":       { bg: "rgba(255,107,107,0.1)",  color: "#ff6b6b" },
-    "viral":            { bg: "rgba(200,240,96,0.1)",   color: "#c8f060" },
-    "emotional":        { bg: "rgba(255,107,107,0.1)",  color: "#ff6b6b" },
+    "fear-based":        { bg: "rgba(255,107,107,0.1)",  color: "#ff6b6b" },
+    "no-citation":       { bg: "rgba(255,183,77,0.1)",   color: "#ffb74d" },
+    "identity-threat":   { bg: "rgba(255,107,107,0.1)",  color: "#ff6b6b" },
+    "high-shareability": { bg: "rgba(200,240,96,0.1)",   color: "#c8f060" },
+    "anonymous-source":  { bg: "rgba(255,183,77,0.1)",   color: "#ffb74d" },
+    "us-vs-them":        { bg: "rgba(255,107,107,0.1)",  color: "#ff6b6b" },
+    "viral":             { bg: "rgba(200,240,96,0.1)",   color: "#c8f060" },
+    "emotional":         { bg: "rgba(255,107,107,0.1)",  color: "#ff6b6b" },
   };
   const style = colors[label.toLowerCase()] || { bg: "rgba(92,228,184,0.1)", color: "#5ce4b8" };
-
   return (
     <span style={{
       display: "inline-block",
@@ -73,34 +70,53 @@ function Tag({ label }) {
   );
 }
 
-/* ── Panel wrapper ── */
-function Panel({ title, accent = "#c8f060", children, style: extraStyle }) {
+/* ── Panel ── */
+function Panel({ title, accent = "#c8f060", children, badge }) {
   return (
     <div style={{
       background: "rgba(10,12,15,0.7)",
       border: "0.5px solid rgba(255,255,255,0.07)",
       borderRadius: 14, overflow: "hidden",
       backdropFilter: "blur(16px)",
-      ...extraStyle,
     }}>
       <div style={{
         padding: "12px 18px",
         borderBottom: "0.5px solid rgba(255,255,255,0.05)",
-        display: "flex", alignItems: "center", gap: 8,
+        display: "flex", alignItems: "center",
+        justifyContent: "space-between",
       }}>
-        <div style={{ width: 5, height: 5, borderRadius: "50%", background: accent }} />
-        <span style={{
-          fontFamily: "'IBM Plex Mono', monospace",
-          fontSize: 9, letterSpacing: "0.16em", color: "#404752",
-          textTransform: "uppercase",
-        }}>{title}</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ width: 5, height: 5, borderRadius: "50%", background: accent }} />
+          <span style={{
+            fontFamily: "'IBM Plex Mono', monospace",
+            fontSize: 9, letterSpacing: "0.16em",
+            color: "#404752", textTransform: "uppercase",
+          }}>{title}</span>
+        </div>
+        {badge}
       </div>
       <div style={{ padding: "18px" }}>{children}</div>
     </div>
   );
 }
 
-/* ── Empty / idle state ── */
+/* ── Saved badge ── */
+function SavedBadge() {
+  return (
+    <div style={{
+      display: "flex", alignItems: "center", gap: 6,
+      fontFamily: "'IBM Plex Mono', monospace",
+      fontSize: 9, color: "#5ce4b8", letterSpacing: "0.1em",
+      background: "rgba(92,228,184,0.08)",
+      border: "0.5px solid rgba(92,228,184,0.2)",
+      borderRadius: 20, padding: "3px 10px",
+    }}>
+      <span>✓</span> SAVED TO DATABASE
+    </div>
+  );
+}
+
+/* ── Empty state ── */
 function EmptyState() {
   return (
     <div style={{
@@ -131,44 +147,69 @@ function EmptyState() {
 function LoadingSkeleton() {
   return (
     <div>
-      <style>{`@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }`}</style>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
-        <Panel title="Viral Risk Index">
+      <style>{`
+        @keyframes shimmer {
+          0%   { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+      `}</style>
+      <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 12, marginBottom: 12 }}>
+        <div style={{
+          background: "rgba(10,12,15,0.7)", border: "0.5px solid rgba(255,255,255,0.07)",
+          borderRadius: 14, padding: 18,
+        }}>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "16px 0" }}>
             <Skeleton h={140} w={140} mb={12} />
             <Skeleton h={28} w={100} />
           </div>
-        </Panel>
-        <Panel title="Signal Breakdown">
+        </div>
+        <div style={{
+          background: "rgba(10,12,15,0.7)", border: "0.5px solid rgba(255,255,255,0.07)",
+          borderRadius: 14, padding: 18,
+        }}>
           {[1,2,3,4].map(i => <Skeleton key={i} h={44} mb={10} />)}
-        </Panel>
+        </div>
       </div>
-      <Panel title="Predicted Spread Path" style={{ marginBottom: 12 }}>
+      <div style={{
+        background: "rgba(10,12,15,0.7)", border: "0.5px solid rgba(255,255,255,0.07)",
+        borderRadius: 14, padding: 18, marginBottom: 12,
+      }}>
         {[1,2,3].map(i => <Skeleton key={i} h={64} mb={8} />)}
-      </Panel>
-      <Panel title="AI Analysis">
+      </div>
+      <div style={{
+        background: "rgba(10,12,15,0.7)", border: "0.5px solid rgba(255,255,255,0.07)",
+        borderRadius: 14, padding: 18,
+      }}>
         <Skeleton h={20} mb={8} />
         <Skeleton h={20} w="85%" mb={8} />
         <Skeleton h={20} w="70%" mb={16} />
         <Skeleton h={16} w="60%" />
-      </Panel>
+      </div>
     </div>
   );
 }
 
-/* ── Results view ── */
-function Results({ result }) {
+/* ── Results ── */
+function Results({ result, saved }) {
   return (
-    <div style={{ animation: "fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both" }}>
-      <style>{`@keyframes fadeUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }`}</style>
+    <div style={{
+      display: "flex", flexDirection: "column", gap: 12,
+      animation: "fadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both",
+    }}>
+      <style>{`
+        @keyframes fadeUp {
+          from { opacity:0; transform:translateY(20px); }
+          to   { opacity:1; transform:translateY(0); }
+        }
+      `}</style>
 
-      {/* Row 1: Gauge + Metrics */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "240px 1fr",
-        gap: 12, marginBottom: 12,
-      }}>
-        <Panel title="Viral Risk Index" accent="#ff6b6b">
+      {/* Row 1 */}
+      <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 12 }}>
+        <Panel
+          title="Viral Risk Index"
+          accent="#ff6b6b"
+          badge={saved ? <SavedBadge /> : null}
+        >
           <RiskGauge score={result.risk_score} level={result.risk_level} />
         </Panel>
 
@@ -179,36 +220,32 @@ function Results({ result }) {
         </Panel>
       </div>
 
-      {/* Row 2: Spread Path */}
-      <Panel title="Predicted Spread Path" accent="#5ce4b8" style={{ marginBottom: 12 }}>
+      {/* Row 2 */}
+      <Panel title="Predicted Spread Path" accent="#5ce4b8">
         {result.spread_stages.map((s, i) => (
           <SpreadStage key={i} stage={s} />
         ))}
       </Panel>
 
-      {/* Row 3: Verdict + Analysis */}
+      {/* Row 3 */}
       <Panel title="AI Verdict & Analysis" accent="#c8f060">
-        {/* Verdict */}
         <div style={{
           background: "rgba(200,240,96,0.04)",
           border: "0.5px solid rgba(200,240,96,0.12)",
           borderLeft: "2px solid #c8f060",
-          borderRadius: 8, padding: "14px 16px",
-          marginBottom: 16,
+          borderRadius: 8, padding: "14px 16px", marginBottom: 16,
           fontSize: 14, color: "#c8c6be", lineHeight: 1.7,
         }}>
           {result.verdict}
         </div>
 
-        {/* Tags */}
         <div style={{ marginBottom: 16 }}>
           {result.tags.map((tag, i) => <Tag key={i} label={tag} />)}
         </div>
 
-        {/* Deep analysis */}
         <div style={{
-          fontSize: 13, color: "#555d6a",
-          lineHeight: 1.8, borderTop: "0.5px solid rgba(255,255,255,0.05)",
+          fontSize: 13, color: "#555d6a", lineHeight: 1.8,
+          borderTop: "0.5px solid rgba(255,255,255,0.05)",
           paddingTop: 14,
         }}>
           {result.analysis}
@@ -218,9 +255,9 @@ function Results({ result }) {
   );
 }
 
-/* ── MAIN ANALYZE PAGE ── */
+/* ── MAIN PAGE ── */
 export default function Analyze() {
-  const { result, loading, error, analyze, reset } = useAnalyze();
+  const { result, loading, error, saved, analyze, reset } = useAnalyze();
   const resultRef = useRef(null);
 
   const handleAnalyze = async (claim) => {
@@ -241,13 +278,12 @@ export default function Analyze() {
         maxWidth: 1000, margin: "0 auto",
         padding: "60px 24px 100px",
       }}>
-
-        {/* Page header */}
+        {/* Header */}
         <div style={{ marginBottom: 48 }}>
           <div style={{
             fontFamily: "'IBM Plex Mono', monospace", fontSize: 10,
-            color: "#c8f060", letterSpacing: "0.2em", marginBottom: 12,
-            opacity: 0.8,
+            color: "#c8f060", letterSpacing: "0.2em",
+            marginBottom: 12, opacity: 0.8,
           }}>TRUTHCHAIN AI · ANALYZER</div>
           <h1 style={{
             fontFamily: "'Syne', sans-serif", fontWeight: 800,
@@ -257,18 +293,17 @@ export default function Analyze() {
             marginBottom: 12,
           }}>Analyze a Claim</h1>
           <p style={{ fontSize: 15, color: "#555d6a", maxWidth: 520, lineHeight: 1.7 }}>
-            Paste any claim, headline, or tweet. TruthChain AI will score its viral risk,
-            map its spread path, and explain what makes it dangerous.
+            Paste any claim, headline, or tweet. TruthChain AI will score its viral
+            risk, map its spread path, and save results to the database.
           </p>
         </div>
 
-        {/* Input section */}
+        {/* Input */}
         <div style={{
           background: "rgba(10,12,15,0.8)",
           border: "0.5px solid rgba(255,255,255,0.07)",
           borderRadius: 16, padding: "28px",
-          backdropFilter: "blur(20px)",
-          marginBottom: 32,
+          backdropFilter: "blur(20px)", marginBottom: 32,
         }}>
           <ClaimInput onAnalyze={handleAnalyze} loading={loading} />
         </div>
@@ -294,13 +329,12 @@ export default function Analyze() {
           </div>
         )}
 
-        {/* Results section */}
+        {/* Results */}
         <div ref={resultRef}>
-          {loading  && <LoadingSkeleton />}
-          {!loading && result  && <Results result={result} />}
+          {loading          && <LoadingSkeleton />}
+          {!loading && result  && <Results result={result} saved={saved} />}
           {!loading && !result && !error && <EmptyState />}
         </div>
-
       </main>
 
       <Footer />
