@@ -4,6 +4,8 @@ import Home      from "./pages/Home";
 import Analyze   from "./pages/Analyze";
 import Dashboard from "./pages/Dashboard";
 import Research  from "./pages/Research";
+import Login     from "./pages/Login";
+import Signup    from "./pages/Signup";
 import NotFound  from "./pages/NotFound";
 
 function CustomCursor() {
@@ -12,7 +14,6 @@ function CustomCursor() {
 
   useEffect(() => {
     let rx = 0, ry = 0;
-    let animFrame;
 
     const onMove = (e) => {
       const x = e.clientX, y = e.clientY;
@@ -20,65 +21,57 @@ function CustomCursor() {
         dot.current.style.left = x + "px";
         dot.current.style.top  = y + "px";
       }
+      rx += (x - rx) * 0.12;
+      ry += (y - ry) * 0.12;
       if (ring.current) {
-        rx += (x - rx) * 0.12;
-        ry += (y - ry) * 0.12;
         ring.current.style.left = rx + "px";
         ring.current.style.top  = ry + "px";
       }
     };
 
-    const onEnterClickable = () => {
-      if (dot.current)  dot.current.style.transform  = "translate(-50%, -50%) scale(2)";
-      if (ring.current) ring.current.style.transform = "translate(-50%, -50%) scale(1.5)";
+    const onEnter = () => {
+      if (dot.current)  dot.current.style.transform  = "translate(-50%,-50%) scale(2)";
+      if (ring.current) ring.current.style.transform = "translate(-50%,-50%) scale(1.5)";
     };
 
-    const onLeaveClickable = () => {
-      if (dot.current)  dot.current.style.transform  = "translate(-50%, -50%) scale(1)";
-      if (ring.current) ring.current.style.transform = "translate(-50%, -50%) scale(1)";
+    const onLeave = () => {
+      if (dot.current)  dot.current.style.transform  = "translate(-50%,-50%) scale(1)";
+      if (ring.current) ring.current.style.transform = "translate(-50%,-50%) scale(1)";
     };
 
     window.addEventListener("mousemove", onMove);
 
-    // Scale cursor on buttons and links
     const clickables = document.querySelectorAll("a, button, [role='button']");
     clickables.forEach(el => {
-      el.addEventListener("mouseenter", onEnterClickable);
-      el.addEventListener("mouseleave", onLeaveClickable);
+      el.addEventListener("mouseenter", onEnter);
+      el.addEventListener("mouseleave", onLeave);
     });
 
     return () => {
       window.removeEventListener("mousemove", onMove);
       clickables.forEach(el => {
-        el.removeEventListener("mouseenter", onEnterClickable);
-        el.removeEventListener("mouseleave", onLeaveClickable);
+        el.removeEventListener("mouseenter", onEnter);
+        el.removeEventListener("mouseleave", onLeave);
       });
-      cancelAnimationFrame(animFrame);
     };
   }, []);
 
   return (
     <>
       <div ref={dot} style={{
-        position: "fixed",
-        width: 8, height: 8,
-        background: "#c8f060",
-        borderRadius: "50%",
-        pointerEvents: "none",
-        zIndex: 99999,
-        transform: "translate(-50%, -50%)",
-        transition: "transform 0.15s cubic-bezier(0.16,1,0.3,1), background 0.2s",
+        position: "fixed", width: 8, height: 8,
+        background: "#c8f060", borderRadius: "50%",
+        pointerEvents: "none", zIndex: 99999,
+        transform: "translate(-50%,-50%)",
+        transition: "transform 0.15s cubic-bezier(0.16,1,0.3,1)",
         mixBlendMode: "difference",
       }} />
       <div ref={ring} style={{
-        position: "fixed",
-        width: 36, height: 36,
+        position: "fixed", width: 36, height: 36,
         border: "1px solid rgba(200,240,96,0.5)",
-        borderRadius: "50%",
-        pointerEvents: "none",
-        zIndex: 99998,
-        transform: "translate(-50%, -50%)",
-        transition: "transform 0.3s cubic-bezier(0.16,1,0.3,1), width 0.2s, height 0.2s",
+        borderRadius: "50%", pointerEvents: "none",
+        zIndex: 99998, transform: "translate(-50%,-50%)",
+        transition: "transform 0.3s cubic-bezier(0.16,1,0.3,1)",
       }} />
     </>
   );
@@ -89,11 +82,13 @@ export default function App() {
     <BrowserRouter>
       <CustomCursor />
       <Routes>
-        <Route path="/"          element={<Home />} />
-        <Route path="/analyze"   element={<Analyze />} />
+        <Route path="/"          element={<Home />}      />
+        <Route path="/analyze"   element={<Analyze />}   />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/research"  element={<Research />} />
-        <Route path="*"          element={<NotFound />} />
+        <Route path="/research"  element={<Research />}  />
+        <Route path="/login"     element={<Login />}     />
+        <Route path="/signup"    element={<Signup />}    />
+        <Route path="*"          element={<NotFound />}  />
       </Routes>
     </BrowserRouter>
   );

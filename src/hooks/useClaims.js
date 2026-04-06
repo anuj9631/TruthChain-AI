@@ -3,6 +3,8 @@ import { supabase } from "../lib/supabase";
 
 /* ── Save a new claim result ── */
 export async function saveClaim(claim, result) {
+  const { data: { user } } = await supabase.auth.getUser();
+
   const { data, error } = await supabase
     .from("claims")
     .insert([{
@@ -14,6 +16,7 @@ export async function saveClaim(claim, result) {
       verdict:       result.verdict,
       tags:          result.tags,
       analysis:      result.analysis,
+      user_id:       user?.id ?? null,
     }])
     .select()
     .single();
@@ -22,6 +25,8 @@ export async function saveClaim(claim, result) {
     console.error("Supabase save error:", error.message);
     return null;
   }
+
+  console.log("Saved to Supabase:", data);
   return data;
 }
 
