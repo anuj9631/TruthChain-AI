@@ -65,6 +65,7 @@ function CustomCursor() {
         transform: "translate(-50%,-50%)",
         transition: "transform 0.15s cubic-bezier(0.16,1,0.3,1)",
         mixBlendMode: "difference",
+        display: window.innerWidth <= 768 ? "none" : "block",
       }} />
       <div ref={ring} style={{
         position: "fixed", width: 36, height: 36,
@@ -72,6 +73,7 @@ function CustomCursor() {
         borderRadius: "50%", pointerEvents: "none",
         zIndex: 99998, transform: "translate(-50%,-50%)",
         transition: "transform 0.3s cubic-bezier(0.16,1,0.3,1)",
+        display: window.innerWidth <= 768 ? "none" : "block",
       }} />
     </>
   );
