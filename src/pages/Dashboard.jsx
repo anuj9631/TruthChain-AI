@@ -334,8 +334,10 @@ export default function Dashboard() {
 
         {/* Charts */}
         <div style={{
-          display: "grid", gridTemplateColumns: "1fr 1fr",
-          gap: 16, marginBottom: 4,
+          display: "grid",
+gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+gap: 16, marginBottom: 4,
+
         }}>
           {/* Trend */}
           <Panel title="Claim Volume — Last 24 Hours" accent="#5ce4b8">

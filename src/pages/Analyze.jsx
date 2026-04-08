@@ -204,7 +204,7 @@ function Results({ result, saved }) {
       `}</style>
 
       {/* Row 1 */}
-      <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 12 }}>
+      <div className="analyze-grid">
         <Panel
           title="Viral Risk Index"
           accent="#ff6b6b"
