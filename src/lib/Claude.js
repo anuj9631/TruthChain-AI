@@ -21,13 +21,13 @@ Respond ONLY with a single valid JSON object. No markdown, no extra text, no bac
     {"name": "Fact-Check Difficulty",  "value": <0-100>}
   ],
   "spread_stages": [
-    {"step": "01", "platform": "<platform name>", "desc": "<how it spreads here in 1-2 sentences>"},
+    {"step": "01", "platform": "<platform name>", "desc": "<1-2 sentences>"},
     {"step": "02", "platform": "<platform name>", "desc": "<description>"},
     {"step": "03", "platform": "<platform name>", "desc": "<description>"}
   ],
-  "verdict": "<2-3 sentence plain language verdict on this claim's danger>",
-  "tags": ["<4-6 short signal tags like: fear-based, no-citation, identity-threat, high-shareability>"],
-  "analysis": "<3-4 sentence deeper analysis: psychological and social patterns, why this spreads, what would slow it down>"
+  "verdict": "<2-3 sentence plain language verdict>",
+  "tags": ["<4-6 short signal tags>"],
+  "analysis": "<3-4 sentence deeper analysis>"
 }`;
 
   const res = await fetch(API_URL, {
@@ -43,7 +43,7 @@ Respond ONLY with a single valid JSON object. No markdown, no extra text, no bac
       messages: [
         {
           role: "system",
-          content: "You are TruthChain AI. You always respond with valid JSON only. No markdown, no explanation, no backticks. Just raw JSON.",
+          content: "You are TruthChain AI. Always respond with valid JSON only. No markdown, no backticks. Just raw JSON.",
         },
         {
           role: "user",
