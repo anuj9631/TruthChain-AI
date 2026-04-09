@@ -6,7 +6,7 @@
 
 ## Live Demo
 
-🔴 **[truthchain-ai.vercel.app](https://truthchain-ai.vercel.app)**
+🔴 **https://truth-chain-ai-ak.vercel.app/**
 
 ---
 
