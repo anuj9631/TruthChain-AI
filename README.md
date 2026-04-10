@@ -14,10 +14,6 @@
 
 Most fact-checkers react *after* misinformation explodes. By then, millions have already seen it.
 
-**TruthChain AI predicts how a false claim will spread — 18 minutes before viral peak.**
-
-Paste any headline, tweet, or claim. TruthChain scores its viral risk from 0–100, maps which communities will amplify it next, and explains the psychological patterns driving its spread.
-
 ---
 
 ## Screenshots
