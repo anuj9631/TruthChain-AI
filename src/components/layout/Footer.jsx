@@ -60,7 +60,7 @@ export default function Footer() {
         <span style={{
           fontFamily: "'IBM Plex Mono', monospace",
           fontSize: 10, color: "#2d333d",
-        }}>© 2026 TruthChain-AI </span>
+        }}>© 2026 TruthChain AI </span>
       </div>
     </footer>
   );
