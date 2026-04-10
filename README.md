@@ -16,14 +16,6 @@ Most fact-checkers react *after* misinformation explodes. By then, millions have
 
 ---
 
-## Screenshots
-
-| Home | Analyze | Dashboard |
-|------|---------|-----------|
-| 3D floating network hero | Live risk gauge + spread path | Real-time claim feed + charts |
-
----
-
 ## Features
 
 - **Viral Risk Index** — 0 to 100 score based on emotional manipulation, source credibility, velocity risk, and fact-check difficulty
